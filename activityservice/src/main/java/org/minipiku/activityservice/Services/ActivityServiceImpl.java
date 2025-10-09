@@ -15,9 +15,17 @@ import java.time.LocalDateTime;
 public class ActivityServiceImpl implements ActivityService {
 
     private final ActivityRepository activityRepository;
+    private final UserValidationService userValidationService;
 
     @Override
     public ActivityResponse trackActivity(ActivityRequest request) {
+
+        // ✅ Validate user before saving activity
+        boolean userExists = userValidationService.validateUser(request.getUserId());
+        if (!userExists) {
+            throw new RuntimeException("Invalid user ID: " + request.getUserId());
+        }
+
         Activity activity = Activity.builder()
                 .userId(request.getUserId())
                 .type(ActivityType.valueOf(request.getType().toUpperCase()))

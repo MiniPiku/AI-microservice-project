@@ -53,4 +53,8 @@ public class UserServiceImpl implements UserService {
                 user.getLastName(),
                 user.getRole().name());
     }
+    public boolean existsByUserId(String userId) {
+        return userRepository.existsById(userId);
+    }
+
 }

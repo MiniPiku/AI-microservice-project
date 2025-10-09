@@ -6,4 +6,5 @@ import org.minipiku.userservice.DTOs.UserResponse;
 public interface UserService {
     UserResponse register(RegisterRequest request);
     UserResponse getUserProfile(String userId);
+    boolean existsByUserId(String userId);
 }
