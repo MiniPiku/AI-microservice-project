@@ -8,7 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    //TODO: fix...idk y this block ain't working
+    //TODO: fix this ("http://localhost:8081")-->("http://USER-SERVICE")
     /*
     @Bean
     @LoadBalanced
