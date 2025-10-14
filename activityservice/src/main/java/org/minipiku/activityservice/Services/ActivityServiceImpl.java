@@ -1,21 +1,29 @@
 package org.minipiku.activityservice.Services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.minipiku.activityservice.DTOs.ActivityRequest;
 import org.minipiku.activityservice.DTOs.ActivityResponse;
 import org.minipiku.activityservice.Models.Activity;
 import org.minipiku.activityservice.Models.ActivityType;
 import org.minipiku.activityservice.Repositories.ActivityRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActivityServiceImpl implements ActivityService {
 
     private final ActivityRepository activityRepository;
     private final UserValidationService userValidationService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Value("${kafka.topic.name}")
+    private String topicName;
 
     @Override
     public ActivityResponse trackActivity(ActivityRequest request) {
@@ -37,7 +45,13 @@ public class ActivityServiceImpl implements ActivityService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        log.info("📝 Saving activity for user {}", request.getUserId());
         Activity saved = activityRepository.save(activity);
+        log.info("✅ Saved activity with ID {}", saved.getId());
+
+
+        //Publish event to Kafka
+        kafkaTemplate.send(topicName, saved);
 
         return ActivityResponse.builder()
                 .id(saved.getId())
