@@ -13,8 +13,11 @@ public class ActivityEventListener {
 
     //TODO: activity-events-->ai-events
 
+    public final ActivityAIService ActivityAIService;
+
     @KafkaListener(topics = "activity-events", groupId = "activity-processor-group")
     public void processActivity(Activity activity) {
-        log.info("📥 Received activity event for user {}", activity.getUserId());
+        log.info("Received activity event for user {}", activity.getUserId());
+        ActivityAIService.generateRecommendation(activity);
     }
 }
