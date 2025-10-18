@@ -33,4 +33,4 @@ kafka:
 gemini:
   api:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
-    key: AIzaSyCipU7LFsCqBhW-xa30dTGITu76g6Ur8OI
+    key: ${Gemini-API-Key}

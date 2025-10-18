@@ -49,7 +49,9 @@ public class GeminiService {
                     .get("parts")
                     .get(0)
                     .get("text")
-                    .asText();
+                    .asText()
+                    .replaceAll("```json","")
+                    .replaceAll("```","");
         }
 
         return "No response from Gemini.";

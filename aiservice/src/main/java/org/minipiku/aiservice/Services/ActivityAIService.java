@@ -22,22 +22,55 @@ public class ActivityAIService {
 
     private String createPromptForActivity(Activity activity) {
         return String.format("""
-            {
-              "activity": {
-                "type": "%s",
-                "durationMinutes": %s,
-                "caloriesBurned": %s,
-                "startTime": "%s",
-                "additionalMetrics": %s
+        {
+          "instruction": "Analyze the activity and generate structured fitness insights. Vary tone randomly. Output must match the responseFormat.",
+          "activity": {
+            "type": "%s",
+            "durationMinutes": %s,
+            "caloriesBurned": %s,
+            "startTime": "%s",
+            "additionalMetrics": %s
+          },
+          "responseFormat": {
+            "analysis": {
+              "overall": "Summary of performance across all metrics.",
+              "pace": "Insight into speed consistency and efficiency.",
+              "heartRate": "Evaluation of heart rate zones and intensity.",
+              "caloriesBurned": "Assessment of energy expenditure."
+            },
+            "improvements": [
+              {
+                "area": "Targeted improvement area (e.g., hydration, recovery)",
+                "recommendation": "Specific advice to enhance performance or safety."
+              }
+            ],
+            "suggestions": [
+              {
+                "workout": "Recommended workout type or variation.",
+                "description": "Brief explanation of the workout's purpose or benefit."
               },
-              "instruction": "Please give short and practical fitness advice or recommendations."
+              {
+                "safety": [
+                  "Safety tip 1 (e.g., warm-up advice)",
+                  "Safety tip 2 (e.g., terrain caution)"
+                ]
+              }
+            ],
+            "summary": {
+              "activityType": "%s",
+              "recommendation": "Concise, practical advice tailored to the activity.",
+              "tone": "One of ['motivational', 'technical', 'casual', 'friendly']",
+              "tags": ["keyword1", "keyword2", "keyword3"]
             }
-            """,
+          }
+        }
+        """,
                 activity.getType(),
                 activity.getDuration() != null ? activity.getDuration() : "null",
                 activity.getCaloriesBurned() != null ? activity.getCaloriesBurned() : "null",
                 activity.getStartTime() != null ? activity.getStartTime() : "null",
-                activity.getAdditionalMetrics() != null ? activity.getAdditionalMetrics() : "{}"
+                activity.getAdditionalMetrics() != null ? activity.getAdditionalMetrics() : "{}",
+                activity.getType() // repeated for summary.activityType
         );
     }
 }
