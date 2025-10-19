@@ -1,9 +1,19 @@
 package org.minipiku.aiservice.Services;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.minipiku.aiservice.Interface.RecommendationRepository;
 import org.minipiku.aiservice.Model.Activity;
+import org.minipiku.aiservice.Model.Recommendation;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -11,13 +21,72 @@ import org.springframework.stereotype.Service;
 public class ActivityAIService {
 
     private final GeminiService geminiService;
+    private final RecommendationRepository recommendationRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     public void generateRecommendation(Activity activity) {
-        String prompt = createPromptForActivity(activity);
+        try {
+            String prompt = createPromptForActivity(activity);
+            String response = geminiService.getRecommendations(prompt);
 
-        String recommendation = geminiService.getRecommendations(prompt);
+            log.info("AI raw response for user {}: {}", activity.getUserId(), response);
 
-        log.info("AI Recommendation for user {}: {}", activity.getUserId(), recommendation);
+            JsonNode jsonNode = objectMapper.readTree(response);
+
+            String formattedAnalysis = String.format(
+                    "overall: %s, \n" +
+                            "pace: %s, \n" +
+                            "heartRate: %s, \n" +
+                            "caloriesBurned: %s",
+                    jsonNode.path("analysis").path("overall").asText(""),
+                    jsonNode.path("analysis").path("pace").asText(""),
+                    jsonNode.path("analysis").path("heartRate").asText(""),
+                    jsonNode.path("analysis").path("caloriesBurned").asText("")
+            );
+
+            Recommendation recommendation = Recommendation.builder()
+                    .activityId(activity.getId())
+                    .userId(activity.getUserId())
+                    .recommendation(formattedAnalysis)  // change type from Map<String,String> to String
+                    .improvements(extractFieldList(jsonNode.path("improvements"), "recommendation"))
+                    .suggestions(extractFieldList(jsonNode.path("suggestions"), "description"))
+                    .safety(extractSafetyList(jsonNode.path("safety")))
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+
+            recommendationRepository.save(recommendation);
+
+            log.info("Saved AI recommendation for user {} to MongoDB", activity.getUserId());
+
+        } catch (Exception e) {
+            log.error("Error generating recommendation for user {}: {}", activity.getUserId(), e.getMessage(), e);
+        }
+    }
+
+    private List<String> extractFieldList(JsonNode node, String fieldName) {
+        List<String> list = new ArrayList<>();
+        if (node.isArray()) {
+            for (JsonNode n : node) {
+                String val = n.path(fieldName).asText(null);
+                if (val != null && !val.isEmpty()) list.add(val);
+            }
+        }
+        return list;
+    }
+
+    private List<String> extractSafetyList(JsonNode node) {
+        List<String> list = new ArrayList<>();
+        if (node.isArray()) {
+            for (JsonNode n : node) {
+                if (n.isTextual()) list.add(n.asText());
+                else if (n.isObject()) {
+                    n.fieldNames().forEachRemaining(key -> list.add(key));
+                }
+            }
+        }
+        return list;
     }
 
     private String createPromptForActivity(Activity activity) {
@@ -48,20 +117,11 @@ public class ActivityAIService {
               {
                 "workout": "Recommended workout type or variation.",
                 "description": "Brief explanation of the workout's purpose or benefit."
-              },
-              {
-                "safety": [
-                  "Safety tip 1 (e.g., warm-up advice)",
-                  "Safety tip 2 (e.g., terrain caution)"
-                ]
               }
             ],
-            "summary": {
-              "activityType": "%s",
-              "recommendation": "Concise, practical advice tailored to the activity.",
-              "tone": "One of ['motivational', 'technical', 'casual', 'friendly']",
-              "tags": ["keyword1", "keyword2", "keyword3"]
-            }
+            "safety": [
+                "Array of plain strings with safety tips."
+            ],
           }
         }
         """,

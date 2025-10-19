@@ -1,6 +1,8 @@
 package org.minipiku.aiservice.Services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,7 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    public String getRecommendations(String details) {
+    public String getRecommendations(String details) throws JsonProcessingException {
         Map<String, Object> requestBody = Map.of(
                 "contents", new Object[]{
                         Map.of("parts", new Object[]{
@@ -43,7 +45,7 @@ public class GeminiService {
                 response.get("candidates").get(0).has("content") &&
                 response.get("candidates").get(0).get("content").has("parts")) {
 
-            return response.get("candidates")
+            String raw =  response.get("candidates")
                     .get(0)
                     .get("content")
                     .get("parts")
@@ -52,6 +54,9 @@ public class GeminiService {
                     .asText()
                     .replaceAll("```json","")
                     .replaceAll("```","");
+
+            return raw;
+
         }
 
         return "No response from Gemini.";
