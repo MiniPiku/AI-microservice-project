@@ -1,26 +1,5 @@
-server:
-  port: 8082
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-
 spring:
   application:
     name: activity-service
-
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/ai-microservice-project
-      database: ai-microservice-project
-
-kafka:
-  topic:
-    name: activity-events
+  config:
+    import: optional:configserver:http://localhost:8084
